@@ -6,63 +6,61 @@ HANDLE resources_pak_map = NULL;
 
 typedef HANDLE(WINAPI *pMapViewOfFile)(
     _In_ HANDLE hFileMappingObject,
-    _In_ DWORD  dwDesiredAccess,
-    _In_ DWORD  dwFileOffsetHigh,
-    _In_ DWORD  dwFileOffsetLow,
-    _In_ SIZE_T dwNumberOfBytesToMap
-    );
+    _In_ DWORD dwDesiredAccess,
+    _In_ DWORD dwFileOffsetHigh,
+    _In_ DWORD dwFileOffsetLow,
+    _In_ SIZE_T dwNumberOfBytesToMap);
 
 pMapViewOfFile RawMapViewOfFile = NULL;
 
 HANDLE WINAPI MyMapViewOfFile(
     _In_ HANDLE hFileMappingObject,
-    _In_ DWORD  dwDesiredAccess,
-    _In_ DWORD  dwFileOffsetHigh,
-    _In_ DWORD  dwFileOffsetLow,
-    _In_ SIZE_T dwNumberOfBytesToMap
-)
+    _In_ DWORD dwDesiredAccess,
+    _In_ DWORD dwFileOffsetHigh,
+    _In_ DWORD dwFileOffsetLow,
+    _In_ SIZE_T dwNumberOfBytesToMap)
 {
     if (hFileMappingObject == resources_pak_map)
     {
-        // –ﬁ∏ƒ Ù–‘Œ™ø…–ﬁ∏ƒ
+        // ‰øÆÊîπÂ±ûÊÄß‰∏∫ÂèØ‰øÆÊîπ
         LPVOID buffer = RawMapViewOfFile(hFileMappingObject, FILE_MAP_COPY, dwFileOffsetHigh,
-            dwFileOffsetLow, dwNumberOfBytesToMap);
+                                         dwFileOffsetLow, dwNumberOfBytesToMap);
 
-        // ≤ª‘Ÿ–Ë“™hook
+        // ‰∏çÂÜçÈúÄË¶Åhook
         resources_pak_map = NULL;
         MH_DisableHook(MapViewOfFile);
 
         if (buffer)
         {
-            // ±È¿˙gzipŒƒº˛
-            TraversalGZIPFile((BYTE*)buffer, [=](uint8_t *begin, uint32_t size, uint32_t &new_len) {
+            // ÈÅçÂéÜgzipÊñá‰ª∂
+            TraversalGZIPFile((BYTE *)buffer, [=](uint8_t *begin, uint32_t size, uint32_t &new_len) {
                 bool changed = false;
 
                 BYTE search_start[] = R"(</settings-about-page>)";
-                uint8_t* pos = memmem(begin, size, search_start, sizeof(search_start) - 1);
+                uint8_t *pos = memmem(begin, size, search_start, sizeof(search_start) - 1);
                 if (pos)
                 {
 
-                    // —πÀıHTML“‘±∏–¥»Î≤π∂°–≈œ¢
-                    std::string html((char*)begin, size);
+                    // ÂéãÁº©HTML‰ª•Â§áÂÜôÂÖ•Ë°•‰∏Å‰ø°ÊÅØ
+                    std::string html((char *)begin, size);
                     compression_html(html);
 
                     // RemoveUpdateError
-					//if (IsNeedPortable())
-					{
-						ReplaceStringInPlace(html, R"(hidden="[[!showUpdateStatus_]]")", R"(hidden="true")");
-						ReplaceStringInPlace(html, R"(hidden="[[!shouldShowIcons_(showUpdateStatus_)]]")", R"(hidden="true")");
-					}
+                    // if (IsNeedPortable())
+                    {
+                        ReplaceStringInPlace(html, R"(hidden="[[!showUpdateStatus_]]")", R"(hidden="true")");
+                        ReplaceStringInPlace(html, R"(hidden="[[!shouldShowIcons_(showUpdateStatus_)]]")", R"(hidden="true")");
+                    }
 
                     const char prouct_title[] = u8R"({aboutBrowserVersion}</div><div class="secondary"><a target="_blank" href="https://github.com/shuax/chrome_plus">Chrome++</a> )" RELEASE_VER_STR u8R"( inside</div>)";
                     ReplaceStringInPlace(html, R"({aboutBrowserVersion}</div>)", prouct_title);
 
                     if (html.length() <= size)
                     {
-                        // –¥»Î–ﬁ∏ƒ
+                        // ÂÜôÂÖ•‰øÆÊîπ
                         memcpy(begin, html.c_str(), html.length());
 
-                        // –ﬁ∏ƒ≥§∂»
+                        // ‰øÆÊîπÈïøÂ∫¶
                         new_len = html.length();
                         changed = true;
                     }
@@ -70,49 +68,46 @@ HANDLE WINAPI MyMapViewOfFile(
 
                 return changed;
             });
-
         }
 
         return buffer;
     }
 
     return RawMapViewOfFile(hFileMappingObject, dwDesiredAccess, dwFileOffsetHigh,
-        dwFileOffsetLow, dwNumberOfBytesToMap);
+                            dwFileOffsetLow, dwNumberOfBytesToMap);
 }
 
 HANDLE resources_pak_file = NULL;
 
 typedef HANDLE(WINAPI *pCreateFileMapping)(
-    _In_     HANDLE                hFile,
+    _In_ HANDLE hFile,
     _In_opt_ LPSECURITY_ATTRIBUTES lpAttributes,
-    _In_     DWORD                 flProtect,
-    _In_     DWORD                 dwMaximumSizeHigh,
-    _In_     DWORD                 dwMaximumSizeLow,
-    _In_opt_ LPCTSTR               lpName
-    );
+    _In_ DWORD flProtect,
+    _In_ DWORD dwMaximumSizeHigh,
+    _In_ DWORD dwMaximumSizeLow,
+    _In_opt_ LPCTSTR lpName);
 
 pCreateFileMapping RawCreateFileMapping = NULL;
 
 HANDLE WINAPI MyCreateFileMapping(
-    _In_     HANDLE                hFile,
+    _In_ HANDLE hFile,
     _In_opt_ LPSECURITY_ATTRIBUTES lpAttributes,
-    _In_     DWORD                 flProtect,
-    _In_     DWORD                 dwMaximumSizeHigh,
-    _In_     DWORD                 dwMaximumSizeLow,
-    _In_opt_ LPCTSTR               lpName
-)
+    _In_ DWORD flProtect,
+    _In_ DWORD dwMaximumSizeHigh,
+    _In_ DWORD dwMaximumSizeLow,
+    _In_opt_ LPCTSTR lpName)
 {
     if (hFile == resources_pak_file)
     {
-        // –ﬁ∏ƒ Ù–‘Œ™ø…–ﬁ∏ƒ
+        // ‰øÆÊîπÂ±ûÊÄß‰∏∫ÂèØ‰øÆÊîπ
         resources_pak_map = RawCreateFileMapping(hFile, lpAttributes, PAGE_WRITECOPY,
-            dwMaximumSizeHigh, dwMaximumSizeLow, lpName);
+                                                 dwMaximumSizeHigh, dwMaximumSizeLow, lpName);
 
-        // ≤ª‘Ÿ–Ë“™hook
+        // ‰∏çÂÜçÈúÄË¶Åhook
         resources_pak_file = NULL;
         MH_DisableHook(CreateFileMappingW);
 
-        if (MH_CreateHook(MapViewOfFile, MyMapViewOfFile, (LPVOID*)&RawMapViewOfFile) == MH_OK)
+        if (MH_CreateHook(MapViewOfFile, MyMapViewOfFile, (LPVOID *)&RawMapViewOfFile) == MH_OK)
         {
             MH_EnableHook(MapViewOfFile);
         }
@@ -120,56 +115,53 @@ HANDLE WINAPI MyCreateFileMapping(
         return resources_pak_map;
     }
     return RawCreateFileMapping(hFile, lpAttributes, flProtect, dwMaximumSizeHigh,
-        dwMaximumSizeLow, lpName);
+                                dwMaximumSizeLow, lpName);
 }
 
 typedef HANDLE(WINAPI *pCreateFile)(
-    _In_     LPCTSTR               lpFileName,
-    _In_     DWORD                 dwDesiredAccess,
-    _In_     DWORD                 dwShareMode,
+    _In_ LPCTSTR lpFileName,
+    _In_ DWORD dwDesiredAccess,
+    _In_ DWORD dwShareMode,
     _In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes,
-    _In_     DWORD                 dwCreationDisposition,
-    _In_     DWORD                 dwFlagsAndAttributes,
-    _In_opt_ HANDLE                hTemplateFile
-    );
+    _In_ DWORD dwCreationDisposition,
+    _In_ DWORD dwFlagsAndAttributes,
+    _In_opt_ HANDLE hTemplateFile);
 
 pCreateFile RawCreateFile = NULL;
 
 HANDLE WINAPI MyCreateFile(
-    _In_     LPCTSTR               lpFileName,
-    _In_     DWORD                 dwDesiredAccess,
-    _In_     DWORD                 dwShareMode,
+    _In_ LPCTSTR lpFileName,
+    _In_ DWORD dwDesiredAccess,
+    _In_ DWORD dwShareMode,
     _In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes,
-    _In_     DWORD                 dwCreationDisposition,
-    _In_     DWORD                 dwFlagsAndAttributes,
-    _In_opt_ HANDLE                hTemplateFile
-)
+    _In_ DWORD dwCreationDisposition,
+    _In_ DWORD dwFlagsAndAttributes,
+    _In_opt_ HANDLE hTemplateFile)
 {
     HANDLE file = RawCreateFile(lpFileName, dwDesiredAccess, dwShareMode,
-        lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes,
-        hTemplateFile);
+                                lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes,
+                                hTemplateFile);
 
     if (isEndWith(lpFileName, L"resources.pak"))
     {
         resources_pak_file = file;
         resources_pak_size = GetFileSize(resources_pak_file, NULL);
 
-        if (MH_CreateHook(CreateFileMappingW, MyCreateFileMapping, (LPVOID*)&RawCreateFileMapping) == MH_OK)
+        if (MH_CreateHook(CreateFileMappingW, MyCreateFileMapping, (LPVOID *)&RawCreateFileMapping) == MH_OK)
         {
             MH_EnableHook(CreateFileMappingW);
         }
 
-        // ≤ª‘Ÿ–Ë“™hook
+        // ‰∏çÂÜçÈúÄË¶Åhook
         MH_DisableHook(CreateFileW);
     }
 
     return file;
 }
 
-
 void PakPatch()
 {
-    MH_STATUS status = MH_CreateHook(CreateFileW, MyCreateFile, (LPVOID*)&RawCreateFile);
+    MH_STATUS status = MH_CreateHook(CreateFileW, MyCreateFile, (LPVOID *)&RawCreateFile);
     if (status == MH_OK)
     {
         MH_EnableHook(CreateFileW);

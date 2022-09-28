@@ -65,13 +65,13 @@ std::wstring GetDiskCacheDir()
     return temp;
 }
 
-// ¹¹ÔìĞÂÃüÁîĞĞ
+// æ„é€ æ–°å‘½ä»¤è¡Œ
 std::wstring GetCommand(LPWSTR param)
 {
-    std::vector <std::wstring> args;
+    std::vector<std::wstring> args;
 
     int argc;
-    LPWSTR* argv = CommandLineToArgvW(param, &argc);
+    LPWSTR *argv = CommandLineToArgvW(param, &argc);
 
     int insert_pos = 0;
     for (int i = 0; i < argc; i++)
@@ -88,11 +88,11 @@ std::wstring GetCommand(LPWSTR param)
     }
     for (int i = 0; i < argc; i++)
     {
-        // ±£ÁôÔ­À´²ÎÊı
-        if(i)
+        // ä¿ç•™åŸæ¥å‚æ•°
+        if (i)
             args.push_back(argv[i]);
 
-        // ×·¼Ó²ÎÊı
+        // è¿½åŠ å‚æ•°
         if (i == insert_pos)
         {
             args.push_back(L"--shuax");
@@ -102,7 +102,7 @@ std::wstring GetCommand(LPWSTR param)
 
             args.push_back(L"--disable-features=RendererCodeIntegrity,FlashDeprecationWarning");
 
-            //if (IsNeedPortable())
+            // if (IsNeedPortable())
             {
                 auto diskcache = GetDiskCacheDir();
 
@@ -121,9 +121,8 @@ std::wstring GetCommand(LPWSTR param)
     }
     LocalFree(argv);
 
-    return JoinArgsString(args, L" ");;
+    return JoinArgsString(args, L" ");
 }
-
 
 void Portable(LPWSTR param)
 {
@@ -132,7 +131,7 @@ void Portable(LPWSTR param)
 
     std::wstring args = GetCommand(param);
 
-    SHELLEXECUTEINFO sei = { 0 };
+    SHELLEXECUTEINFO sei = {0};
     sei.cbSize = sizeof(SHELLEXECUTEINFO);
     sei.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_NO_UI;
     sei.lpVerb = L"open";

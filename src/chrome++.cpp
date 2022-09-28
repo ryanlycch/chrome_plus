@@ -11,27 +11,28 @@ HMODULE hInstance;
 
 #include "hijack.h"
 #include "utils.h"
+#include "patch.h"
 #include "TabBookmark.h"
 #include "portable.h"
 #include "PakPatch.h"
 #include "appid.h"
 #include "green.h"
 
-typedef int(*Startup) ();
+typedef int (*Startup)();
 Startup ExeMain = NULL;
 
 void ChromePlus()
 {
-    // ¿ì½İ·½Ê½
+    // å¿«æ·æ–¹å¼
     SetAppId();
 
-    // ±ãĞ¯»¯²¹¶¡
+    // ä¾¿æºåŒ–è¡¥ä¸
     MakeGreen();
 
-    // ±êÇ©Ò³£¬ÊéÇ©£¬µØÖ·À¸ÔöÇ¿
+    // æ ‡ç­¾é¡µï¼Œä¹¦ç­¾ï¼Œåœ°å€æ å¢å¼º
     TabBookmark();
 
-    // ¸øpakÎÄ¼ş´ò²¹¶¡
+    // ç»™pakæ–‡ä»¶æ‰“è¡¥ä¸
     PakPatch();
 }
 
@@ -49,28 +50,30 @@ void ChromePlusCommand(LPWSTR param)
 
 int Loader()
 {
-    // Ö»¹Ø×¢Ö÷½çÃæ
+    // ç¡¬è¡¥ä¸
+    MakePatch();
+
+    // åªå…³æ³¨ä¸»ç•Œé¢
     LPWSTR param = GetCommandLineW();
-    //DebugLog(L"param %s", param);
+    // DebugLog(L"param %s", param);
     if (!wcsstr(param, L"-type="))
     {
         ChromePlusCommand(param);
     }
 
-    //·µ»Øµ½Ö÷³ÌĞò
+    //è¿”å›åˆ°ä¸»ç¨‹åº
     return ExeMain();
 }
 
-
 void InstallLoader()
 {
-    //»ñÈ¡³ÌĞòÈë¿Úµã
+    //è·å–ç¨‹åºå…¥å£ç‚¹
     MODULEINFO mi;
     GetModuleInformation(GetCurrentProcess(), GetModuleHandle(NULL), &mi, sizeof(MODULEINFO));
     PBYTE entry = (PBYTE)mi.EntryPoint;
 
-    // Èë¿ÚµãÌø×ªµ½Loader
-    MH_STATUS status = MH_CreateHook(entry, Loader, (LPVOID*)&ExeMain);
+    // å…¥å£ç‚¹è·³è½¬åˆ°Loader
+    MH_STATUS status = MH_CreateHook(entry, Loader, (LPVOID *)&ExeMain);
     if (status == MH_OK)
     {
         MH_EnableHook(entry);
@@ -82,7 +85,7 @@ void InstallLoader()
 }
 #define EXTERNC extern "C"
 
-// 
+//
 EXTERNC __declspec(dllexport) void shuax()
 {
 }
@@ -94,10 +97,10 @@ EXTERNC BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID pv)
         DisableThreadLibraryCalls(hModule);
         hInstance = hModule;
 
-        // ±£³ÖÏµÍ³dllÔ­ÓĞ¹¦ÄÜ
+        // ä¿æŒç³»ç»ŸdllåŸæœ‰åŠŸèƒ½
         LoadSysDll(hModule);
 
-        // ³õÊ¼»¯HOOK¿â³É¹¦ÒÔºó°²×°¼ÓÔØÆ÷
+        // åˆå§‹åŒ–HOOKåº“æˆåŠŸä»¥åå®‰è£…åŠ è½½å™¨
         MH_STATUS status = MH_Initialize();
         if (status == MH_OK)
         {
